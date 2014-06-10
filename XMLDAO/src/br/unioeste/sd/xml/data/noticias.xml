@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<noticias>
+	<assunto type="futebol">
+		<noticia id="1">
+			<title>CCCCCCCCC</title>
+			<text>quwuiwqiuwqwqwqwwuwquiwwq</text>
+		</noticia>
+		<noticia id="2">
+			<title>BBBBBBBBBBBBBB</title>
+			<text>quwuiwqiuwqwqwqwwuwquiwwq</text>
+		</noticia>
+		<noticia id="3">
+			<title>AAAAAAAAAA</title>
+			<text>quwuiwqiuwqwqwqwwuwquiwwq</text>
+		</noticia>
+	</assunto>
+	
+	<assunto type="politica">
+		<noticia id="1">
+			<title>Politica 1</title>
+			<text>quwuiwqiuwqwqwqwwuwquiwwq</text>
+		</noticia>
+		<noticia id="2">
+			<title>Politica 2</title>
+			<text>quwuiwqiuwqwqwqwwuwquiwwq</text>
+		</noticia>
+		<noticia id="3">
+			<title>Politica 3</title>
+			<text>quwuiwqiuwqwqwqwwuwquiwwq</text>
+		</noticia>
+	</assunto>
+	
+	<assunto type="economia">
+		<noticia id="1">
+			<title>Dinheiro</title>
+			<text>quwuiwqiuwqwqwqwwuwquiwwq</text>
+		</noticia>
+		<noticia id="2">
+			<title>Poupança</title>
+			<text>quwuiwqiuwqwqwqwwuwquiwwq</text>
+		</noticia>
+		<noticia id="3">
+			<title>Credito</title>
+			<text>quwuiwqiuwqwqwqwwuwquiwwq</text>
+		</noticia>
+	</assunto>
+</noticias>
