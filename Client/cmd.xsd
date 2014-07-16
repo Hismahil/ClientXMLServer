@@ -3,6 +3,7 @@
 	<xs:element name="cmd">
 		<xs:complexType>
 			<xs:sequence>
+				<xs:element name="type" type="xs:string"/>
 				<xs:element name="cmdString" type="xs:string"/>
 			</xs:sequence>
 		</xs:complexType>

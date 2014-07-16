@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import br.unioeste.sd.news.News;
+import br.unioeste.sd.xml.factory.XmlConnectionFactory;
+
 public class Server {
 
 	private ServerSocket server = null;
@@ -14,6 +17,7 @@ public class Server {
 	
 	public Server(int port){
 		this.port = port;
+		News.news = XmlConnectionFactory.getDocument("noticias.xml", "noticias.xsd");
 	}
 	
 	public void listen(){

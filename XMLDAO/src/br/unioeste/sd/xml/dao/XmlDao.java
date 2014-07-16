@@ -27,7 +27,7 @@ public class XmlDao {
 	 * @return <code>Document</code>
 	 */
 	public Document insert(String query, Document doc, int id, String title, String comment){
-		NodeList listaNoticia = select(query, doc);
+		Element listaNoticia = (Element) select(query, doc, XPathConstants.NODE);
 		Element noticia = doc.createElement("noticia");
 		noticia.setAttribute("id", String.valueOf(id));
 		
@@ -39,7 +39,7 @@ public class XmlDao {
 		
 		noticia.appendChild(_title);
 		noticia.appendChild(text);
-		listaNoticia.item(0).getParentNode().insertBefore(noticia, listaNoticia.item(0));
+		listaNoticia.appendChild(noticia);
 		
 		return doc;
 	}
@@ -93,14 +93,44 @@ public class XmlDao {
 		return doc;
 	}
 	
+	/**
+	 * <h3><b>Removo um nó de uma tag</b></h3><br>
+	 * @param root <code>XPath do nó raiz</code><br/>
+	 * @param child <code>XPath do elemento que sera removido</code><br/>
+	 * @param doc <code>Documento</code><br/>
+	 * @return <code>Documento</code><br/>
+	 */
 	public Document remove(String root, String child, Document doc){
 		
 		NodeList assunto = select(root, doc);
-		NodeList noticia = select(child, doc);
+		Element noticia = (Element) select(child, doc, XPathConstants.NODE);
+		Element title1 = (Element) noticia.getElementsByTagName("title").item(0);
 		
-		for(int i = 0; i < assunto.getLength(); i++)
-			if(assunto.item(i).equals(noticia))
-				assunto.item(i).removeChild(noticia.item(0));
+		for(int i = 0; i < assunto.getLength(); i++){
+			Element node = (Element)assunto.item(i);
+			Element title2 = (Element) node.getElementsByTagName("title").item(0);
+			
+			if(title1.getTextContent().equals(title2.getTextContent()))
+				node.getParentNode().removeChild(node);
+		}
+		
+		return doc;
+	}
+	
+	/**
+	 * <h3><b>Removo todos os elementos de uma tag</b></h3><br>
+	 * @param root <code>XPath da tag base</code><br/>
+	 * @param doc <code>Documento XML</code><br/>
+	 * @return <code>Documento XML</code><br/>
+	 */
+	public Document remove(String root, Document doc){
+		
+		NodeList assunto = select(root, doc);
+		
+		for(int i = 0; i < assunto.getLength(); i++){
+			Element node = (Element)assunto.item(i);
+			node.getParentNode().removeChild(node);
+		}
 		
 		return doc;
 	}
