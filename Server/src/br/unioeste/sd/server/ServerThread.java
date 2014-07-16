@@ -5,7 +5,10 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
+import javax.xml.xpath.XPathConstants;
+
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import br.unioeste.sd.news.News;
 import br.unioeste.sd.xml.dao.XmlDao;
@@ -52,6 +55,9 @@ public class ServerThread extends Thread{
 						xmlDao.remove("/noticias/assunto[@type='futebol']//noticia", assuntos);
 						xmlDao.remove("/noticias/assunto[@type='economia']//noticia", assuntos);
 						xmlDao.remove("/noticias/assunto[@type='politica']//noticia", assuntos);
+						System.out.println("-------------------------------------------------------------------");
+						System.out.println(Util.toString(News.news));
+						System.out.println("-------------------------------------------------------------------");
 						out.writeUTF(Util.toString(assuntos));
 						break;
 					case 2: 
@@ -63,16 +69,36 @@ public class ServerThread extends Thread{
 						temp = cmd.getElementsByTagName("cmdString").item(0).getTextContent();
 						
 						Util.merge(temp, temp.substring(0, temp.indexOf("]") + 1), News.news, noticias, xmlDao);
+						
+						System.out.println("-------------------------------------------------------------------");
+						System.out.println(Util.toString(News.news));
+						System.out.println("-------------------------------------------------------------------");
+						
 						out.writeUTF(Util.toString(noticias));
 						break;
 					case 3:
 						temp = in.readUTF();
 						Document noticia = Util.toXml(temp, "noticias.xsd");
-						Util.merge(cmd.getLastChild().getTextContent() + "//noticia", 
-								cmd.getLastChild().getTextContent(), 
+						Util.merge(cmd.getElementsByTagName("cmdString").item(0).getTextContent() + "//noticia", 
+								cmd.getElementsByTagName("cmdString").item(0).getTextContent(), 
 								noticia, News.news, xmlDao);
+						System.out.println(temp);
+						
+						System.out.println("-------------------------------------------------------------------");
+						System.out.println(Util.toString(News.news));
+						System.out.println("-------------------------------------------------------------------");
+						
 						break;
 					case 4:
+						temp = in.readUTF();
+						Document assunto = Util.toXml(temp, "noticias.xsd");
+						Element newAssunto = (Element) xmlDao.select(cmd.getElementsByTagName("cmdString").item(0).getTextContent() + "//assunto", 
+								assunto, XPathConstants.NODE);
+						xmlDao.insert(News.news, newAssunto.getAttribute("type"));
+						
+						System.out.println(Util.toString(News.news));
+						break;
+					case 5:
 						cmd = XmlConnectionFactory.getDocument("cmd.xml", "cmd.xsd");
 						xmlDao.update("/cmd/type", cmd, "CLOSE ACCEPT");
 						xmlDao.update("/cmd/cmdString", cmd, "DISCONNECTED");
@@ -114,10 +140,14 @@ public class ServerThread extends Thread{
 			if(cmd.getElementsByTagName("type").item(0).getTextContent().equals("SELECT") &&
 			   cmd.getElementsByTagName("cmdString").item(0).getTextContent().contains("//noticia")) op = 2;
 			
-			if(cmd.getElementsByTagName("type").item(0).getTextContent().equals("INSERT")) op = 3;
+			if(cmd.getElementsByTagName("type").item(0).getTextContent().equals("INSERT") &&
+			   cmd.getElementsByTagName("cmdString").item(0).getTextContent().contains("/noticias/assunto[@type")) op = 3;
+			
+			if(cmd.getElementsByTagName("type").item(0).getTextContent().equals("INSERT") &&
+			   cmd.getElementsByTagName("cmdString").item(0).getTextContent().equals("/noticias")) op = 4;
 			
 			if(cmd.getElementsByTagName("type").item(0).getTextContent().equals("CLOSE REQUEST") &&
-			   cmd.getElementsByTagName("cmdString").item(0).getTextContent().equals("CLOSE CONNECTION")) op = 4;
+			   cmd.getElementsByTagName("cmdString").item(0).getTextContent().equals("CLOSE CONNECTION")) op = 5;
 			
 		} catch (IOException e) { e.printStackTrace(); }
 		

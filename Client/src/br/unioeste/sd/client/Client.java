@@ -51,10 +51,11 @@ public class Client {
 				switch(sc.nextInt()){
 					case 1: getSubjects(); break;
 					case 2: showSubjects(); break;
-					case 3: getNews(); break;
-					case 4: showNews(); break;
-					case 5: insertNews(); break;
-					case 6: close(); break;
+					case 3: insertSubject(); break;
+					case 4: getNews(); break;
+					case 5: showNews(); break;
+					case 6: insertNews(); break;
+					case 7: close(); break;
 					default: break;
 				}
 			}
@@ -74,19 +75,22 @@ public class Client {
 		System.out.println("------------------------------------------------------------");
 		System.out.println("(1) Requisitar assuntos.");
 		System.out.println("(2) Visualizar assuntos.");
-		System.out.println("(3) Requisitar noticias.");
-		System.out.println("(4) Visualizar noticias.");
-		System.out.println("(5) Inserir noticia em um assunto.");
-		System.out.println("(6) Fechar.");
+		System.out.println("(3) Inserir novo assunto.");
+		System.out.println("(4) Requisitar noticias.");
+		System.out.println("(5) Visualizar noticias.");
+		System.out.println("(6) Inserir noticia em um assunto.");
+		System.out.println("(7) Fechar.");
 		System.out.println(">> ");
 	}
 	
 	private void insertNews(){
 		System.out.println("------------------------------------------------------------");
-		System.out.print("Qual o assunto: ");
+		/*System.out.print("Qual o assunto: ");
 		String type = sc.nextLine();
+		type = sc.nextLine();
+		
 		//se nao for nenhum assunto
-		if(!type.equals("futebol") || !type.equals("politica") || !type.equals("economia")){
+		if(!type.equals("futebol") && !type.equals("politica") && !type.equals("economia")){
 			System.out.println("Assunto inexistente!");
 			return;
 		}
@@ -95,15 +99,21 @@ public class Client {
 		
 		System.out.print("ID da noticia: ");
 		int id = sc.nextInt();
+		id = sc.nextInt();
 		System.out.println();
 		
 		System.out.println("Titulo da noticia: ");
 		String title = sc.nextLine();
+		title = sc.nextLine();
 		System.out.println();
 		
 		System.out.println("Comentario: ");
 		String comment = sc.nextLine();
-		System.out.println("------------------------------------------------------------");
+		comment = sc.nextLine();
+		System.out.println("------------------------------------------------------------");*/
+		
+		String type = "futebol", comment = "********", title = "xingamento";
+		int id = 4;
 		
 		String xpath = "/noticias/assunto[@type='" + type + "']";
 		//insere local
@@ -129,6 +139,27 @@ public class Client {
 		} catch (IOException e) { e.printStackTrace(); }
 		
 		System.out.println("Assunto inserido com sucesso!");
+	}
+	
+	private void insertSubject(){
+		String type = "tecnologia";
+		
+		xmlDao.insert(news, type);
+		
+		Document outDoc = XmlConnectionFactory.getDocument("noticias.xml", "noticias.xsd");
+		xmlDao.insert(outDoc, type);
+		
+		cmd = XmlConnectionFactory.getDocument("cmd.xml", "cmd.xsd");
+		xmlDao.update("/cmd/type", cmd, "INSERT");
+		xmlDao.update("/cmd/cmdString", cmd, "/noticias");
+		
+		try {
+			out.writeUTF(Util.toString(cmd));
+			out.writeUTF(Util.toString(outDoc));
+		} catch (IOException e) { e.printStackTrace(); }
+		
+		System.out.println(Util.toString(news));
+		System.out.println(Util.toString(outDoc));
 	}
 	
 	private void close(){
