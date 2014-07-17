@@ -4,13 +4,17 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import br.unioeste.sd.msg.Command;
+import br.unioeste.sd.news.Assunto;
+import br.unioeste.sd.news.Noticia;
+import br.unioeste.sd.error.Error;
 import br.unioeste.sd.xml.dao.XmlDao;
 import br.unioeste.sd.xml.factory.XmlConnectionFactory;
 import br.unioeste.sd.xml.util.Util;
@@ -22,14 +26,12 @@ public class Client {
 	private DataOutputStream out = null;
 	private String ip;
 	private int port;
-	private Scanner sc = null;
 	
 	private Document news;
 	private Document cmd;
 	private Document error;
 	private XmlDao xmlDao;
 	
-	private boolean isConnected = true;
 	
 	public Client(String ip, int port){
 		this.ip = ip;
@@ -43,91 +45,28 @@ public class Client {
 			socket = new Socket(ip, port);
 			in = new DataInputStream(socket.getInputStream());
 			out = new DataOutputStream(socket.getOutputStream());
-			sc = new Scanner(System.in);
-			
-			while(isConnected){
-				showOptions();
-				
-				switch(sc.nextInt()){
-					case 1: getSubjects(); break;
-					case 2: showSubjects(); break;
-					case 3: insertSubject(); break;
-					case 4: getNews(); break;
-					case 5: showNews(); break;
-					case 6: insertNews(); break;
-					case 7: close(); break;
-					default: break;
-				}
-			}
-		}catch(IOException e){
-			e.printStackTrace();
-		}finally{
-			if(socket != null)
-				try{
-					socket.close();
-				}catch(IOException e){
-					e.printStackTrace();
-				}
-		}
+		}catch(IOException e){ e.printStackTrace(); }
 	}
 	
-	private void showOptions(){
-		System.out.println("------------------------------------------------------------");
-		System.out.println("(1) Requisitar assuntos.");
-		System.out.println("(2) Visualizar assuntos.");
-		System.out.println("(3) Inserir novo assunto.");
-		System.out.println("(4) Requisitar noticias.");
-		System.out.println("(5) Visualizar noticias.");
-		System.out.println("(6) Inserir noticia em um assunto.");
-		System.out.println("(7) Fechar.");
-		System.out.println(">> ");
-	}
-	
-	private void insertNews(){
-		System.out.println("------------------------------------------------------------");
-		/*System.out.print("Qual o assunto: ");
-		String type = sc.nextLine();
-		type = sc.nextLine();
-		
-		//se nao for nenhum assunto
-		if(!type.equals("futebol") && !type.equals("politica") && !type.equals("economia")){
-			System.out.println("Assunto inexistente!");
-			return;
-		}
-		
-		System.out.println();
-		
-		System.out.print("ID da noticia: ");
-		int id = sc.nextInt();
-		id = sc.nextInt();
-		System.out.println();
-		
-		System.out.println("Titulo da noticia: ");
-		String title = sc.nextLine();
-		title = sc.nextLine();
-		System.out.println();
-		
-		System.out.println("Comentario: ");
-		String comment = sc.nextLine();
-		comment = sc.nextLine();
-		System.out.println("------------------------------------------------------------");*/
-		
-		String type = "futebol", comment = "********", title = "xingamento";
-		int id = 4;
+	public Command insertNews(String type, Noticia noticia){
 		
 		String xpath = "/noticias/assunto[@type='" + type + "']";
 		//insere local
-		xmlDao.insert(xpath, news, id, title, comment);
+		xmlDao.insert(xpath, news, noticia.getId(), noticia.getTitle(), noticia.getText());
+		
 		//transforma para string
 		String temp = Util.toString(news);
+		
 		//cria novo doc
 		Document outDoc = Util.toXml(temp, "noticias.xsd");
+		
 		//remove todas as noticias
 		xmlDao.remove("/noticias/assunto[@type='futebol']//noticia", outDoc);
 		xmlDao.remove("/noticias/assunto[@type='politica']//noticia", outDoc);
 		xmlDao.remove("/noticias/assunto[@type='economia']//noticia", outDoc);
+		
 		//insere apenas a nova noticia
-		xmlDao.insert(xpath, outDoc, id, title, comment);
+		xmlDao.insert(xpath, outDoc, noticia.getId(), noticia.getTitle(), noticia.getText());
 		
 		cmd = XmlConnectionFactory.getDocument("cmd.xml", "cmd.xsd");
 		xmlDao.update("/cmd/type", cmd, "INSERT");
@@ -138,11 +77,11 @@ public class Client {
 			out.writeUTF(Util.toString(outDoc)); //envia a nova noticia
 		} catch (IOException e) { e.printStackTrace(); }
 		
-		System.out.println("Assunto inserido com sucesso!");
+		return new Command("Sucesso", "Noticia inserida com sucesso!");
 	}
 	
-	private void insertSubject(){
-		String type = "tecnologia";
+	public Assunto insertSubject(String type){
+		Assunto assunto = null;
 		
 		xmlDao.insert(news, type);
 		
@@ -156,13 +95,16 @@ public class Client {
 		try {
 			out.writeUTF(Util.toString(cmd));
 			out.writeUTF(Util.toString(outDoc));
+			
+			assunto = new Assunto();
+			assunto.setType(type);
 		} catch (IOException e) { e.printStackTrace(); }
 		
-		System.out.println(Util.toString(news));
-		System.out.println(Util.toString(outDoc));
+		return assunto;
 	}
 	
-	private void close(){
+	public Command close(){
+		Command command;
 		String temp = null;
 		
 		cmd = XmlConnectionFactory.getDocument("cmd.xml", "cmd.xsd");
@@ -174,16 +116,23 @@ public class Client {
 			temp = in.readUTF();
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally{
+			if( socket != null)
+				try{ socket.close(); } catch(IOException ex) { ex.printStackTrace(); }
 		}
 		
 		Document reply = Util.toXml(temp, "cmd.xsd");
-		System.out.println(reply.getElementsByTagName("type").item(0).getTextContent());
-		System.out.println(reply.getElementsByTagName("cmdString").item(0).getTextContent());
-		isConnected = false;
+		command = new Command(reply.getElementsByTagName("type").item(0).getTextContent(),
+				reply.getElementsByTagName("cmdString").item(0).getTextContent());
+		
+		return command;
 	}
 	
-	private void getSubjects(){
-		String temp = null;
+	public Error getSubjectsFromServer(List<Assunto> assuntos){
+		Error err = null;
+		List<String> attrib;
+		Assunto assunto;
+		String temp = null, xpath = "/noticias//assunto";
 		
 		cmd = XmlConnectionFactory.getDocument("cmd.xml", "cmd.xsd");
 		xmlDao.update("/cmd/type", cmd, "SELECT");
@@ -192,37 +141,59 @@ public class Client {
 		try {
 			out.writeUTF(Util.toString(cmd));
 			temp = in.readUTF();
-			news = Util.toXml(temp, "noticias.xsd");
 			
 		} catch (IOException e) { e.printStackTrace(); }
 		
-		if(temp.contains("<assunto>")) news = Util.toXml(temp, "noticias.xsd");
-		
-		if(temp.contains("<error>")) showError(temp);
-	}
-	
-	private void showSubjects(){
-		NodeList list = xmlDao.select("/noticias//assunto", news);
-		
-		System.out.println("------------------------------------------------------------");
-		for(int i = 0; i < list.getLength(); i++){
-			Element attrib = (Element) list.item(i);
-			System.out.println(attrib.getAttribute("type"));
+		if(temp.contains("assunto")) {
+			if(news == null) news = Util.toXml(temp, "noticias.xsd");
+			else{
+				Document reply = Util.toXml(temp, "noticias.xsd");
+				Util.cmp(xpath, "type", reply, news, xmlDao);
+			}
+			
+			attrib = Util.getAttribs(xpath, "type", news, xmlDao);
+			
+			for(int i = 0; i < attrib.size(); i++){
+				assunto = new Assunto();
+				assunto.setType(attrib.get(i));
+				assuntos.add(assunto);
+			}
 		}
-		System.out.println("------------------------------------------------------------");
+		
+		if(temp.contains("<error>")) err = showError(temp);
+		
+		return err;
+	}
+
+	public List<Assunto> getSubjectsFromDocument(){
+		List<Assunto> assuntos = null;
+		List<String> attrib;
+		Assunto assunto;
+		String xpath = "/noticias//assunto";
+		
+		attrib = Util.getAttribs(xpath, "type", news, xmlDao);
+		assuntos = new ArrayList<Assunto>();
+			
+		for(int i = 0; i < attrib.size(); i++){
+			assunto = new Assunto();
+			assunto.setType(attrib.get(i));
+			assuntos.add(assunto);
+		}
+		
+		return assuntos;
 	}
 	
-	private void getNews(){
+	public List<String> getSubjectsAttributes(){
+		String xpath = "/noticias//assunto";
+		return Util.getAttribs(xpath, "type", news, xmlDao);
+	}
+	
+	public Error getNewsFromServer(String assunto, List<Noticia> noticias){
 		String temp = null;
-		System.out.println("------------------------------------------------------------");
-		System.out.print("Noticias de qual assunto: ");
-		temp = sc.nextLine();
-		System.out.println("------------------------------------------------------------");
+		Error err = null;
 		
-		temp = "futebol";
-		
-		String xpathIn = "/noticias/assunto[@type='"+temp+"']//noticia";
-		String xpathOut = "/noticias/assunto[@type='" + temp + "']";
+		String xpathIn = "/noticias/assunto[@type='"+assunto+"']//noticia";
+		String xpathOut = "/noticias/assunto[@type='" + assunto + "']";
 		
 		cmd = XmlConnectionFactory.getDocument("cmd.xml", "cmd.xsd");
 		xmlDao.update("/cmd/type", cmd, "SELECT");
@@ -231,46 +202,62 @@ public class Client {
 		try {
 			out.writeUTF(Util.toString(cmd));
 			temp = in.readUTF();
-			System.out.println(temp);
 		} catch (IOException e) { e.printStackTrace(); }
 		
 		if(temp.contains("noticia")){
 			Document reply = Util.toXml(temp, "noticias.xsd");
-			Util.merge(xpathIn, xpathOut, reply, news, xmlDao);
+			
+			//se o assunto esta vasio
+			if(xmlDao.select(xpathIn, news).getLength() == 0) 
+				Util.merge(xpathIn, xpathOut, reply, news, xmlDao);
+			else //se não compara e adiciona o que não tem
+				Util.cmp(xpathIn, "id", reply, news, xmlDao);
+			
+			NodeList list = xmlDao.select(xpathIn, news);
+			
+			Element no = null;
+			Noticia noticia = null;
+			
+			for(int i = 0; i < list.getLength(); i++){
+				no = (Element) list.item(i);
+				noticia = new Noticia(Integer.parseInt(no.getAttribute("id")), 
+						no.getElementsByTagName("title").item(0).getTextContent(), 
+						no.getElementsByTagName("text").item(0).getTextContent());
+				
+				noticias.add(noticia);
+			}
 		}
 		
-		if(temp.contains("<error>")) showError(temp);
+		if(temp.contains("<error>")) err = showError(temp);
+		
+		return err;
 	}
 	
-	private void showNews(){
-		String temp = null;
-		System.out.println("------------------------------------------------------------");
-		System.out.print("Noticias de qual assunto: ");
-		temp = sc.nextLine();
-		System.out.println("------------------------------------------------------------");
+	public List<Noticia> getNewsFromDocument(String assunto){
+		List<Noticia> noticias = new ArrayList<Noticia>();
 		
-		temp = "futebol";
-		
-		String xpath = "/noticias/assunto[@type='"+temp+"']";
+		String xpath = "/noticias/assunto[@type='"+assunto+"']//noticia";
 		
 		NodeList list = xmlDao.select(xpath, news);
+		Element no = null;
+		Noticia noticia = null;
 		
-		/*for(int i = 0; i < list.getLength(); i++){
-			Element node = (Element) list.item(i);
+		for(int i = 0; i < list.getLength(); i++){
+			no = (Element) list.item(i);
+			noticia = new Noticia(Integer.parseInt(no.getAttribute("id")), 
+					no.getElementsByTagName("title").item(0).getTextContent(), 
+					no.getElementsByTagName("text").item(0).getTextContent());
 			
-			System.out.println("ID: " + node.getAttribute("id"));
-			System.out.println("Titulo: " + node.getElementsByTagName("title").item(0).getTextContent());
-			System.out.println("Comentario: " + node.getElementsByTagName("comment").item(0).getTextContent());
-			System.out.println("------------------------------------------------------------");
-		}*/
-		System.out.println(Util.toString(news));
+			noticias.add(noticia);
+		}
+		
+		return noticias;
 	}
 	
-	private void showError(String temp){
+	private Error showError(String temp){
 		error = Util.toXml(temp, "error.xsd");
-		System.out.println("------------------------------------------------------------");
-		System.out.println(error.getElementsByTagName("title").item(0).getTextContent());
-		System.out.println(error.getElementsByTagName("msg").item(0).getTextContent());
-		System.out.println("------------------------------------------------------------");
+		Error err = new Error(error.getElementsByTagName("title").item(0).getTextContent(),
+				error.getElementsByTagName("msg").item(0).getTextContent());
+		return err;
 	}
 }

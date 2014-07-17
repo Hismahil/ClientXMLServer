@@ -3,6 +3,8 @@ package br.unioeste.sd.xml.util;
 import java.io.File;
 import java.io.StringBufferInputStream;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -106,5 +108,46 @@ public class Util {
 					item.getElementsByTagName("text").item(0).getTextContent());
 		}
 	}
+
+	public static void cmp(String query, String attrib, Document in, Document out, XmlDao xml){
+		NodeList listIn = xml.select(query, in);
+		NodeList listOut = xml.select(query, out);
+		boolean isSubject = (attrib.equals("type") ? true : false);
+		
+		int j = 0;
+		
+		for(int i = 0; i < listIn.getLength(); i++){
+			Element n1 = (Element) listIn.item(i); //assuntos vindos do servidor
+			for(j = 0; j < listOut.getLength(); j++){
+				Element n2 = (Element) listOut.item(j); //assunto local
+				//se for igual os atributos nem continua
+				if(n1.getAttribute(attrib).equals(n2.getAttribute(attrib))) break;
+			}
+			//se for diferente o atributo adiciona
+			if(j == listOut.getLength()){
+				
+				if(isSubject) //se for novo assunto
+					xml.insert(out, n1.getAttribute(attrib));
+				else //se for nova noticia
+					xml.insert(query.substring(0, query.indexOf("]") + 1), 
+							out, 
+							Integer.parseInt(n1.getAttribute(attrib)), 
+							n1.getElementsByTagName("title").item(0).getTextContent(), 
+							n1.getElementsByTagName("text").item(0).getTextContent());
+			}
+		}
+	}
 	
+	public static List<String> getAttribs(String query, String attrib, Document doc, XmlDao xml){
+		List<String> attr = new ArrayList<String>();
+		NodeList list = xml.select(query, doc);
+		Element no = null;
+		
+		for(int i = 0; i < list.getLength(); i++){
+			no = (Element) list.item(i);
+			attr.add(new String(no.getAttribute(attrib)));
+		}
+		
+		return attr;
+	}
 }

@@ -55,13 +55,14 @@ public class ServerThread extends Thread{
 						xmlDao.remove("/noticias/assunto[@type='futebol']//noticia", assuntos);
 						xmlDao.remove("/noticias/assunto[@type='economia']//noticia", assuntos);
 						xmlDao.remove("/noticias/assunto[@type='politica']//noticia", assuntos);
-						System.out.println("-------------------------------------------------------------------");
-						System.out.println(Util.toString(News.news));
-						System.out.println("-------------------------------------------------------------------");
+						
+						System.out.println("Cliente: " + clientID + 
+								" IP: " + client.getInetAddress().getHostAddress() +
+								" CMD: " + cmd.getElementsByTagName("cmdString").item(0).getTextContent());
+						
 						out.writeUTF(Util.toString(assuntos));
 						break;
 					case 2: 
-						
 						Document noticias = XmlConnectionFactory.getDocument("noticias.xml", "noticias.xsd");
 						xmlDao.remove("/noticias/assunto[@type='futebol']//noticia", noticias);
 						xmlDao.remove("/noticias/assunto[@type='economia']//noticia", noticias);
@@ -70,24 +71,23 @@ public class ServerThread extends Thread{
 						
 						Util.merge(temp, temp.substring(0, temp.indexOf("]") + 1), News.news, noticias, xmlDao);
 						
-						System.out.println("-------------------------------------------------------------------");
-						System.out.println(Util.toString(News.news));
-						System.out.println("-------------------------------------------------------------------");
+						System.out.println("Cliente: " + clientID + 
+								" IP: " + client.getInetAddress().getHostAddress() +
+								" CMD: " + cmd.getElementsByTagName("cmdString").item(0).getTextContent());
 						
 						out.writeUTF(Util.toString(noticias));
 						break;
 					case 3:
 						temp = in.readUTF();
 						Document noticia = Util.toXml(temp, "noticias.xsd");
+						
 						Util.merge(cmd.getElementsByTagName("cmdString").item(0).getTextContent() + "//noticia", 
 								cmd.getElementsByTagName("cmdString").item(0).getTextContent(), 
 								noticia, News.news, xmlDao);
-						System.out.println(temp);
 						
-						System.out.println("-------------------------------------------------------------------");
-						System.out.println(Util.toString(News.news));
-						System.out.println("-------------------------------------------------------------------");
-						
+						System.out.println("Cliente: " + clientID + 
+								" IP: " + client.getInetAddress().getHostAddress() +
+								" CMD: " + cmd.getElementsByTagName("cmdString").item(0).getTextContent());
 						break;
 					case 4:
 						temp = in.readUTF();
@@ -96,13 +96,21 @@ public class ServerThread extends Thread{
 								assunto, XPathConstants.NODE);
 						xmlDao.insert(News.news, newAssunto.getAttribute("type"));
 						
-						System.out.println(Util.toString(News.news));
+						System.out.println("Cliente: " + clientID + 
+								" IP: " + client.getInetAddress().getHostAddress() +
+								" CMD: " + cmd.getElementsByTagName("cmdString").item(0).getTextContent());
+						
 						break;
 					case 5:
 						cmd = XmlConnectionFactory.getDocument("cmd.xml", "cmd.xsd");
 						xmlDao.update("/cmd/type", cmd, "CLOSE ACCEPT");
 						xmlDao.update("/cmd/cmdString", cmd, "DISCONNECTED");
 						out.writeUTF(Util.toString(cmd));
+						
+						System.out.println("Cliente: " + clientID + 
+								" IP: " + client.getInetAddress().getHostAddress() +
+								" CMD: " + cmd.getElementsByTagName("cmdString").item(0).getTextContent());
+						
 						conectado = false;
 						break;
 					default: 
