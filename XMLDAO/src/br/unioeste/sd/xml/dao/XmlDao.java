@@ -61,6 +61,12 @@ public class XmlDao {
 		return doc;
 	}
 	
+	/**
+	 * <h3><b>Seleciona um nó</b></h3><br>
+	 * @param query <code>XPath do nó</code><br/>
+	 * @param doc <code>Documento XML</code><br/>
+	 * @return <code>NodeList</code><br/>
+	 */
 	public NodeList select(String query, Document doc){
 		xpath = XPathFactory.newInstance().newXPath();
 		NodeList list = null;
@@ -74,6 +80,13 @@ public class XmlDao {
 		return list;
 	}
 	
+	/**
+	 * <h3><b>Seleciona um nó</b></h3><br>
+	 * @param query <code>XPath do nó</code><br/>
+	 * @param doc <code>Documento XML</code><br/>
+	 * @param xpathConstant <code>XPathContant.NODE</code><br/>
+	 * @return <code>Node</code><br/>
+	 */
 	public Node select(String query, Document doc, QName xpathConstant){
 		xpath = XPathFactory.newInstance().newXPath();
 		Node no = null;
@@ -87,6 +100,13 @@ public class XmlDao {
 		return no;
 	}
 	
+	/**
+	 * <h3><b>Atualiza o conteudo de um nó</b></h3><br>
+	 * @param query <code>XPath com o caminho completo até o nó</code><br/>
+	 * @param doc <code>Documento XML</code><br/>
+	 * @param newValue <code>Novo valor do nó</code><br/>
+	 * @return <code>Documento XML atualizado</code><br/>
+	 */
 	public Document update(String query, Document doc, String newValue){
 		Node no = select(query, doc, XPathConstants.NODE);
 		no.setTextContent(newValue);

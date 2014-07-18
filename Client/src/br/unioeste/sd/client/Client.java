@@ -48,7 +48,14 @@ public class Client {
 		}catch(IOException e){ e.printStackTrace(); }
 	}
 	
-	public Command insertNews(String type, Noticia noticia){
+	/**
+	 * <h3><b>Insere nova noticia em um assunto</b></h3><br/>
+	 * @param type <code>Assunto</code><br/>
+	 * @param noticia <code>Nova noticia</code><br/>
+	 * @param msg <code>Mensagem do servidor</code><br/>
+	 * @return <code>Mensagem de erro se houver</code><br/>
+	 */
+	public Error insertNews(String type, Noticia noticia, Command msg){
 		
 		String xpath = "/noticias/assunto[@type='" + type + "']";
 		//insere local
@@ -60,35 +67,54 @@ public class Client {
 		//cria novo doc
 		Document outDoc = Util.toXml(temp, "noticias.xsd");
 		
+		List<String> attrib = Util.getAttribs("/noticias//assunto", "type", news, xmlDao);
+		
 		//remove todas as noticias
-		xmlDao.remove("/noticias/assunto[@type='futebol']//noticia", outDoc);
-		xmlDao.remove("/noticias/assunto[@type='politica']//noticia", outDoc);
-		xmlDao.remove("/noticias/assunto[@type='economia']//noticia", outDoc);
+		for(int i = 0; i < attrib.size(); i++){
+			xmlDao.remove("/noticias/assunto[@type='" + attrib.get(i) + "']//noticia", outDoc);
+		}
 		
 		//insere apenas a nova noticia
 		xmlDao.insert(xpath, outDoc, noticia.getId(), noticia.getTitle(), noticia.getText());
 		
 		cmd = XmlConnectionFactory.getDocument("cmd.xml", "cmd.xsd");
+		
 		xmlDao.update("/cmd/type", cmd, "INSERT");
 		xmlDao.update("/cmd/cmdString", cmd, xpath);
 		
 		try {
 			out.writeUTF(Util.toString(cmd));
 			out.writeUTF(Util.toString(outDoc)); //envia a nova noticia
+			
+			temp = in.readUTF(); //mensagem do servidor
+			
 		} catch (IOException e) { e.printStackTrace(); }
 		
-		return new Command("Sucesso", "Noticia inserida com sucesso!");
+		if(temp.contains("<cmd>")) reply(temp, msg);
+		
+		if(temp.contains("<error>")) return showError(temp);
+		
+		return null;
 	}
 	
-	public Assunto insertSubject(String type){
-		Assunto assunto = null;
+	/**
+	 * <h3><b>Insere novo assunto local e no servidor</b></h3><br/>
+	 * @param type <code>Novo assunto</code><br/>
+	 * @param assunto <code>Instancia do assunto onde sera adicionado o novo assunto</code><br/>
+	 * @param msg <code>Mensagem vinda do servidor</code><br/>
+	 * @return <code>Novo assunto</code><br/>
+	 */
+	public Error insertSubject(String type, Assunto assunto, Command msg){
+		String temp = null;
 		
 		xmlDao.insert(news, type);
 		
 		Document outDoc = XmlConnectionFactory.getDocument("noticias.xml", "noticias.xsd");
+		
 		xmlDao.insert(outDoc, type);
 		
 		cmd = XmlConnectionFactory.getDocument("cmd.xml", "cmd.xsd");
+		
 		xmlDao.update("/cmd/type", cmd, "INSERT");
 		xmlDao.update("/cmd/cmdString", cmd, "/noticias");
 		
@@ -96,18 +122,28 @@ public class Client {
 			out.writeUTF(Util.toString(cmd));
 			out.writeUTF(Util.toString(outDoc));
 			
-			assunto = new Assunto();
+			temp = in.readUTF(); //mensagem do servidor
+			
 			assunto.setType(type);
 		} catch (IOException e) { e.printStackTrace(); }
 		
-		return assunto;
+		if(temp.contains("<cmd>")) reply(temp, msg);
+		
+		if(temp.contains("<error>")) return showError(temp);
+		
+		return null;
 	}
 	
-	public Command close(){
-		Command command;
+	/**
+	 * <h3><b>Fecha o cliente</b></h3><br/>
+	 * @param msg <code>Mensagem de resposta do servidor</code><br/> 
+	 * @return <code>Mensagem do servidor</code><br/>
+	 */
+	public Error close(Command msg){
 		String temp = null;
 		
 		cmd = XmlConnectionFactory.getDocument("cmd.xml", "cmd.xsd");
+		
 		xmlDao.update("/cmd/type", cmd, "CLOSE REQUEST");
 		xmlDao.update("/cmd/cmdString", cmd, "CLOSE CONNECTION");
 		
@@ -121,15 +157,19 @@ public class Client {
 				try{ socket.close(); } catch(IOException ex) { ex.printStackTrace(); }
 		}
 		
-		Document reply = Util.toXml(temp, "cmd.xsd");
-		command = new Command(reply.getElementsByTagName("type").item(0).getTextContent(),
-				reply.getElementsByTagName("cmdString").item(0).getTextContent());
+		if(temp.contains("<cmd>")) reply(temp, msg);
 		
-		return command;
+		if(temp.contains("<error>")) return showError(temp);
+		
+		return null;
 	}
 	
+	/**
+	 * <h3><b>Retorna os assuntos do servidor</b></h3><br/>
+	 * @param assuntos <code>Lista onde sera adicionado os assuntos</code><br/>
+	 * @return <code>Mensagem de erro</code><br/>
+	 */
 	public Error getSubjectsFromServer(List<Assunto> assuntos){
-		Error err = null;
 		List<String> attrib;
 		Assunto assunto;
 		String temp = null, xpath = "/noticias//assunto";
@@ -145,7 +185,9 @@ public class Client {
 		} catch (IOException e) { e.printStackTrace(); }
 		
 		if(temp.contains("assunto")) {
-			if(news == null) news = Util.toXml(temp, "noticias.xsd");
+			if(news == null) {
+				news = Util.toXml(temp, "noticias.xsd");
+			}
 			else{
 				Document reply = Util.toXml(temp, "noticias.xsd");
 				Util.cmp(xpath, "type", reply, news, xmlDao);
@@ -160,11 +202,15 @@ public class Client {
 			}
 		}
 		
-		if(temp.contains("<error>")) err = showError(temp);
+		if(temp.contains("<error>")) return showError(temp);
 		
-		return err;
+		return null;
 	}
 
+	/**
+	 * <h3><b>Retorna os assuntos do documento local</b></h3><br/>
+	 * @return <code>Lista de assuntos</code><br/>
+	 */
 	public List<Assunto> getSubjectsFromDocument(){
 		List<Assunto> assuntos = null;
 		List<String> attrib;
@@ -183,19 +229,29 @@ public class Client {
 		return assuntos;
 	}
 	
+	/**
+	 * <h3><b>Retorna os nomes dos assuntos</b></h3><br/>
+	 * @return <code>Lista de assuntos</code><br/>
+	 */
 	public List<String> getSubjectsAttributes(){
 		String xpath = "/noticias//assunto";
 		return Util.getAttribs(xpath, "type", news, xmlDao);
 	}
 	
+	/**
+	 * <h3><b>Retorna noticias vindas do servidor</b></h3><br/>
+	 * @param assunto <code>Atributo do Assunto</code><br/>
+	 * @param noticias <code>Lista onde sera adicionado as noticias</code><br/>
+	 * @return <code>Mensagem de erro</code><br/>
+	 */
 	public Error getNewsFromServer(String assunto, List<Noticia> noticias){
 		String temp = null;
-		Error err = null;
 		
 		String xpathIn = "/noticias/assunto[@type='"+assunto+"']//noticia";
 		String xpathOut = "/noticias/assunto[@type='" + assunto + "']";
 		
 		cmd = XmlConnectionFactory.getDocument("cmd.xml", "cmd.xsd");
+		
 		xmlDao.update("/cmd/type", cmd, "SELECT");
 		xmlDao.update("/cmd/cmdString", cmd, xpathIn);
 		
@@ -228,11 +284,16 @@ public class Client {
 			}
 		}
 		
-		if(temp.contains("<error>")) err = showError(temp);
+		if(temp.contains("<error>")) return showError(temp);
 		
-		return err;
+		return null;
 	}
 	
+	/**
+	 * <h3><b>Retorna noticia de um assunto no documento local</b></h3><br/>
+	 * @param assunto <code>Atributo do Assunto</code><br/>
+	 * @return <code>Lista de noticias</code><br/>
+	 */
 	public List<Noticia> getNewsFromDocument(String assunto){
 		List<Noticia> noticias = new ArrayList<Noticia>();
 		
@@ -254,10 +315,106 @@ public class Client {
 		return noticias;
 	}
 	
+	/**
+	 * <h3><b>Atualiza uma noticia de um assunto</b></h3><br/>
+	 * @param assunto <code>Atributo do Assunto</code><br/>
+	 * @param noticia <code>Dados atualizados da noticia</code><br/>
+	 * @param msg <code>Mensagem do servidor</code><br/>
+	 * @return <code>Mensagem de erro</code><br/>
+	 */
+	public Error updateNews(String assunto, Noticia noticia, Command msg){
+		String xpath = "/noticias/assunto[@type='" + assunto + "']/noticia[@id='" + noticia.getId() + "']";
+		String temp = null;
+		
+		xmlDao.update(xpath + "/title", news, noticia.getTitle());
+		xmlDao.update(xpath + "/text", news, noticia.getText());
+		
+		Document outDoc = XmlConnectionFactory.getDocument("noticias.xml", "noticias.xsd");
+		
+		xmlDao.insert(outDoc, assunto);
+		xmlDao.insert("/noticias/assunto[@type='" + assunto + "']", outDoc, noticia.getId(), noticia.getTitle(), noticia.getText());
+		
+		cmd = XmlConnectionFactory.getDocument("cmd.xml", "cmd.xsd");
+		
+		xmlDao.update("/cmd/type", cmd, "UPDATE");
+		xmlDao.update("/cmd/cmdString", cmd, xpath);
+		
+		try {
+			out.writeUTF(Util.toString(cmd));
+			out.writeUTF(Util.toString(outDoc));
+			
+			temp = in.readUTF(); //mensagem do servidor
+		} catch (IOException e) { e.printStackTrace(); }
+		
+		if(temp.contains("<cmd>")) reply(temp, msg);
+		
+		if(temp.contains("<error>")) return showError(temp);
+		
+		return null;
+	}
+	/**
+	 * <h3><b>Remove uma noticia de um assunto</b></h3><br/>
+	 * @param assunto <code>Atributo do Assunto</code><br/>
+	 * @param id <code>ID da noticia</code><br/>
+	 * @param msg <code>Mensagem de sucesso</code><br/>
+	 * @return <code>Erro</code><br/>
+	 */
+	public Error removeNews(String assunto, int id, Command msg){
+		String xpathRoot = "/noticias/assunto[@type='" + assunto + "']//noticia", xpathChild = "/noticias/assunto[@type='" + assunto + "']/noticia[@id='1']";
+		boolean contains = false;
+		String temp = null;
+		
+		List<String> attrib = Util.getAttribs(xpathRoot, "id", news, xmlDao);
+		
+		for(int i = 0; i < attrib.size(); i++){
+			if(xpathChild.contains(attrib.get(i))) contains = true;
+		}
+		
+		if(contains){
+			xmlDao.remove(xpathRoot, xpathChild, news);
+			
+			cmd = XmlConnectionFactory.getDocument("cmd.xml", "cmd.xsd");
+			
+			xmlDao.update("/cmd/type", cmd, "REMOVE");
+			xmlDao.update("/cmd/cmdString", cmd, xpathRoot + "," + xpathChild);
+			
+			
+			
+			try {
+				out.writeUTF(Util.toString(cmd));
+				temp = in.readUTF();
+			} catch (IOException e) { e.printStackTrace(); }
+			
+			
+			if(temp.contains("<cmd>")) reply(temp, msg);
+			
+			if(temp.contains("<error>")) return showError(temp);
+		} 
+		else {
+			msg.setType("REMOVE");
+			msg.setCmdString("A noticia não existe para ser removida");
+			
+			return new Error("Erro", "Não é possivel remover o que não existe!");
+		}
+		
+		return null;
+	}
+	
 	private Error showError(String temp){
-		error = Util.toXml(temp, "error.xsd");
 		Error err = new Error(error.getElementsByTagName("title").item(0).getTextContent(),
 				error.getElementsByTagName("msg").item(0).getTextContent());
 		return err;
+	}
+	
+	/**
+	 * <h3><b>Replica de mensagem do servidor</b></h3><br/> 
+	 * @param temp <code>XML vindo do servidor com a mensagem</code><br/>
+	 * @param msg <code>Mensagem</code><br/>
+	 */
+	private void reply(String temp, Command msg){
+		Document reply = Util.toXml(temp, "cmd.xsd");
+		
+		msg.setType(reply.getElementsByTagName("type").item(0).getTextContent());
+		msg.setCmdString(reply.getElementsByTagName("cmdString").item(0).getTextContent());
 	}
 }

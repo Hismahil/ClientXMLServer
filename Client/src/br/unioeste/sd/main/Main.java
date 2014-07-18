@@ -14,7 +14,7 @@ public class Main {
 	public static void main(String[] args) {
 		Client client = new Client("127.0.0.1", 7777);
 		client.connect();
-		Command cmd = null;
+		Command cmd = new Command();
 		
 		List<Assunto> assuntos = new ArrayList<Assunto>();
 		
@@ -36,18 +36,32 @@ public class Main {
 		
 		assuntos.get(1).setNoticias(noticias);
 		
-		Noticia noticia = new Noticia(4, "Corrupcao", "caralho");
-		
-		cmd = client.insertNews(assuntos.get(1).getType(), noticia);
+		err = client.removeNews(assuntos.get(1).getType(), 1, cmd);
 		
 		System.out.println(cmd.getType());
 		System.out.println(cmd.getCmdString());
 		
-		assuntos.add(client.insertSubject("tecnologia"));
+		Noticia noticia = new Noticia(4, "Corrupcao", "corrupt");
+		
+		err = client.insertNews(assuntos.get(1).getType(), noticia, cmd);
+		
+		System.out.println(cmd.getType());
+		System.out.println(cmd.getCmdString());
+		
+		noticia.setText("Brasil pais da palhacada");
+		
+		err = client.updateNews(assuntos.get(1).getType(), noticia, cmd);
+		
+		System.out.println(cmd.getType());
+		System.out.println(cmd.getCmdString());
+		
+		Assunto assunto = new Assunto();
+		err = client.insertSubject("tecnologia", assunto, cmd);
+		assuntos.add(assunto);
 		
 		System.out.println(assuntos.get(3).getType());
 		
-		cmd = client.close();
+		err = client.close(cmd);
 		
 		System.out.println(cmd.getType());
 		System.out.println(cmd.getCmdString());

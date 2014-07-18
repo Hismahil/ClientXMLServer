@@ -15,6 +15,12 @@ import br.unioeste.sd.xml.error.XmlErrorHandle;
 
 public class XmlConnectionFactory {
 
+	/**
+	 * <h3><b>Cria intancia de um documento xml</b></h3><br>
+	 * @param xml <code>Local e nome do documento xml</code><br/>
+	 * @param xsd <code>Local e nome do documento xsd</code><br/>
+	 * @return <code>Document</code><br/>
+	 */
 	public static Document getDocument(String xml, String xsd){
 		File schemaFile = new File(xsd);
         File xmlFile = new File(xml);

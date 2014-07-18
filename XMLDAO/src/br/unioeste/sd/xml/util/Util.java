@@ -43,6 +43,7 @@ public class Util {
         Schema schema = null;
         
         Document doc = null;
+        
         try 
         {  
         	xsdFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
@@ -50,7 +51,8 @@ public class Util {
         	factory.setSchema(schema);
             builder = factory.newDocumentBuilder();
             builder.setErrorHandler(new XmlErrorHandle());
-            doc = builder.parse(new StringBufferInputStream(xml)); 
+            doc = builder.parse(new StringBufferInputStream(xml));
+            
         } catch (Exception e) {  
             e.printStackTrace();  
         } 
@@ -109,6 +111,14 @@ public class Util {
 		}
 	}
 
+	/**
+	 * <h3><b>Compara assuntos ou noticias de um assunto e adiciona se houver algo diferente</b></h3><br/>
+	 * @param query <code>XPath dos assuntos ou noticias de um assunto</code><br/>
+	 * @param attrib <code>Atributo do assunto ou da noticia</code><br/>
+	 * @param in <code>Documento contendo a diferença</code><br/>
+	 * @param out <code>Documento que falta conteudo</code><br/>
+	 * @param xml <code>XMLDao</code><br/>
+	 */
 	public static void cmp(String query, String attrib, Document in, Document out, XmlDao xml){
 		NodeList listIn = xml.select(query, in);
 		NodeList listOut = xml.select(query, out);
@@ -138,6 +148,14 @@ public class Util {
 		}
 	}
 	
+	/**
+	 * <h3><b>Adiciona o conteudo de um Doc em outro Doc</b></h3><br/>
+	 * @param query <code>XPath dos assuntos ou das noticias</code><br/>
+	 * @param attrib <code>Atributo da tag que se quer pegar</code><br/>
+	 * @param doc <code>Documento XML</code><br/>
+	 * @param xml <code>XMLDao para selecionar os nos</code><br/>
+	 * @return <code>Lista de String com os atributos</code><br/>
+	 */
 	public static List<String> getAttribs(String query, String attrib, Document doc, XmlDao xml){
 		List<String> attr = new ArrayList<String>();
 		NodeList list = xml.select(query, doc);
