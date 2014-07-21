@@ -176,7 +176,7 @@ public class Client {
 		
 		cmd = XmlConnectionFactory.getDocument("cmd.xml", "cmd.xsd");
 		xmlDao.update("/cmd/type", cmd, "SELECT");
-		xmlDao.update("/cmd/cmdString", cmd, "/noticias/assunto");
+		xmlDao.update("/cmd/cmdString", cmd, xpath);
 	
 		try {
 			out.writeUTF(Util.toString(cmd));
@@ -360,7 +360,7 @@ public class Client {
 	 * @return <code>Erro</code><br/>
 	 */
 	public Error removeNews(String assunto, int id, Command msg){
-		String xpathRoot = "/noticias/assunto[@type='" + assunto + "']//noticia", xpathChild = "/noticias/assunto[@type='" + assunto + "']/noticia[@id='1']";
+		String xpathRoot = "/noticias/assunto[@type='" + assunto + "']//noticia", xpathChild = "/noticias/assunto[@type='" + assunto + "']/noticia[@id='" + id + "']";
 		boolean contains = false;
 		String temp = null;
 		

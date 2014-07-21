@@ -20,7 +20,7 @@ public class Main {
 	private Client client = null;
 	
 	public Main(){
-		client = new Client("192.168.25.6", 7777);
+		client = new Client("179.106.201.85", 1234);
 		client.connect();
 	}
 	
@@ -150,13 +150,18 @@ public class Main {
 		}
 		else if(res.equals("n")){
 			if(hasAssunto(noticias.getAssuntos(), assunto)){
-				noticia = noticias.getAssuntos().get(indexOfAssunto(noticias.getAssuntos(), assunto)).getNoticias();
-				
-				System.out.println("Noticias sobre " + assunto);
-				for(int i = 0; i < noticia.size(); i++){
-					System.out.println(noticia.get(i).getId());
-					System.out.println(noticia.get(i).getTitle());
-					System.out.println(noticia.get(i).getText());
+				if(noticias.getAssuntos().get(indexOfAssunto(noticias.getAssuntos(), assunto)).getNoticias() != null){
+					noticia = noticias.getAssuntos().get(indexOfAssunto(noticias.getAssuntos(), assunto)).getNoticias();
+					
+					System.out.println("Noticias sobre " + assunto);
+					for(int i = 0; i < noticia.size(); i++){
+						System.out.println(noticia.get(i).getId());
+						System.out.println(noticia.get(i).getTitle());
+						System.out.println(noticia.get(i).getText());
+					}
+				}
+				else{
+					System.out.println("Não existe noticias sobre esse assunto!");
 				}
 			}
 			else{

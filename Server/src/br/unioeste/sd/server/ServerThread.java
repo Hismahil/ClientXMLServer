@@ -78,7 +78,7 @@ public class ServerThread extends Thread{
 			
 			
 			if(cmd.getElementsByTagName("type").item(0).getTextContent().equals("SELECT") &&
-			   cmd.getElementsByTagName("cmdString").item(0).getTextContent().equals("/noticias/assunto")) op = 1;
+			   cmd.getElementsByTagName("cmdString").item(0).getTextContent().equals("/noticias//assunto")) op = 1;
 			
 			if(cmd.getElementsByTagName("type").item(0).getTextContent().equals("SELECT") &&
 			   cmd.getElementsByTagName("cmdString").item(0).getTextContent().contains("//noticia")) op = 2;

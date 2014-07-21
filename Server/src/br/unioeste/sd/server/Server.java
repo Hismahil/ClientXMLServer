@@ -1,7 +1,6 @@
 package br.unioeste.sd.server;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -15,11 +14,9 @@ public class Server {
 	private ServerThread st = null;
 	private int id = 0;
 	private int port;
-	private InetAddress address;
 	
-	public Server(int port, InetAddress address){
+	public Server(int port){
 		this.port = port;
-		this.address = address;
 		News.news = XmlConnectionFactory.getDocument("noticias.xml", "noticias.xsd");
 	}
 	
@@ -30,20 +27,14 @@ public class Server {
 			while(true){
 				try{
 					clientSocket = server.accept();
+					
 					System.out.println("Cliente: " + id + " IP: " + clientSocket.getInetAddress().getHostAddress() + " CONNECTED ");
 					st = new ServerThread(clientSocket, id);
-					st.run();
+					st.start();
 					
 					id++;
 				}catch(IOException e){
 					e.printStackTrace();
-				}finally{
-					if(clientSocket != null)
-						try{
-							clientSocket.close();
-						}catch(IOException e){
-							e.printStackTrace();
-						}
 				}
 			}
 		}catch(IOException e){
